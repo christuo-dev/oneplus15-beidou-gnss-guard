@@ -1,0 +1,51 @@
+name: 设备兼容性 / Device compatibility
+description: 阅读安全和安装文档后报告问题 / Report an issue after reading the safety and installation docs.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请删除 IMEI、ICCID、EID、手机号、精确坐标和账户信息。
+        Remove IMEI, ICCID, EID, phone numbers, precise coordinates, and account information before submitting logs.
+  - type: input
+    id: model
+    attributes:
+      label: 精确型号和项目号 / Exact model and project
+      placeholder: "CPH2749 / OP611FL1 / 24863"
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: 系统和基带版本 / Firmware and baseband version
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 预期和实际表现 / Expected and observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: 已脱敏的 gnss_efs_fix --check 输出 / Sanitized output
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已脱敏的 service.log / Sanitized log excerpt
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: 安全确认 / Safety confirmation
+      options:
+        - label: 我已阅读安全文档并删除个人标识信息 / I read the safety docs and removed personal identifiers.
+          required: true

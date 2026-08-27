@@ -1,0 +1,6 @@
+id=oneplus15_bds_guard
+name=OnePlus 15 BeiDou GNSS Guard
+version=0.4.1
+versionCode=8
+author=christuo-dev
+description=Repairs both Qualcomm GNSS EFS masks to 0x5905 and reloads GNSS after SIM/eSIM changes. CPH2749/24863 only.
