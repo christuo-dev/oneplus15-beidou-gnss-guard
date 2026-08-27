@@ -1,4 +1,4 @@
-[简体中文](RELEASE_NOTES_v0.4.1_ZH.md) | [English](RELEASE_NOTES_v0.4.1.md)
+[简体中文](https://github.com/christuo-dev/oneplus15-beidou-gnss-guard/blob/main/docs/RELEASE_NOTES_v0.4.1_ZH.md) | [English](https://github.com/christuo-dev/oneplus15-beidou-gnss-guard/blob/main/docs/RELEASE_NOTES_v0.4.1.md)
 
 # v0.4.1 — 首个公开版本
 
