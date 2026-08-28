@@ -18,6 +18,46 @@
 
 这个项目记录了完整排查过程，并提供一个尽量小、可验证、可回退的 KernelSU 模块。
 
+## 为什么更新到 v0.5.1
+
+早期测试发现，北美版 OnePlus 15 冷重启后可以看到北斗，但切换 eSIM、运营商重新注册、
+Wi-Fi/VoWiFi 状态变化或移动网络恢复后，北斗可能消失。对比事件发生前后的状态后，问题
+逐渐从“GNSS HAL 是否支持北斗”收敛到 modem 在订阅或区域配置刷新时重新生成 GNSS 策略。
+
+运行时检查确认，关键配置位于两个 Qualcomm modem EFS 项：
+
+```text
+/nv/item_files/gps/cgps/me/gnss_config
+/nv/item_files/gps/cgps/me/gnss_config_Subscription01
+```
+
+在部分切换场景中，modem 会把已知的 `05 59 00 00`（`0x5905`）重新写成
+`05 49 00 00`（`0x4905`）。因此 v0.5.1 将守护触发扩展到 SIM/eSIM、Wi-Fi、VoWiFi
+和移动信号恢复，并在触发后的 180 秒内每 1 秒检查。它仍然只能在写入发生后快速恢复，
+不能从 Android AP 侧阻止 modem 内部重新生成配置。
+
+### 最新 MBN/MCFG 扫描结论
+
+进一步扫描和对比 NA、NA/TMO 相关软件模板与 EU 硬件 MCFG 后，已经定位到源头差异：
+
+| 对比模板 | GNSS 配置 |
+|---|---|
+| NA `mcfg_hw` | `gnss_config = 0x4905`（`05 49 00 00`） |
+| EU `mcfg_hw` | `gnss_config = 0x5905`（`05 59 00 00`） |
+
+需要修改的位置已经在 NA MBN/MCFG 模板中定位到对应的 GNSS 区域配置字段。这个结果
+解释了为什么运行时 EFS 修复能够恢复北斗，却不能保证 modem 下一次订阅刷新后仍保持
+欧版配置。当前还不能安全地断言只改某一个 `NA` 后的字段、把 `4` 改成 `5` 就足够；
+必须同时确认字段校验、长度、签名和整份 MBN 的封装关系。
+
+目前本项目没有发布修改后的 MBN。现有环境缺少能够正确完成 MBN 加密、签名或封装的
+工具，无法生成可被 modem/PDC 安全接受的修改文件。v0.5.1 因此继续采用可回退的运行时
+EFS 守护，不修改 MBN、MCFG 分区、PDC 或 modem 固件。
+
+如果你熟悉 Qualcomm MBN/MCFG 解析与重封装、PDC 配置流程、签名校验或 NA/NA-TMO 与 EU
+模板差异分析，欢迎通过 Issue 或 Pull Request 协助验证这个字段并提供安全的工具链。
+尤其需要能够保留原有结构和校验、在不触碰 RF 配置的前提下生成可恢复的测试样本。
+
 ## 一句话结论
 
 问题不在天线，也不需要刷欧版 modem。关键是 Qualcomm modem 的两个 GNSS EFS

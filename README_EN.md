@@ -19,6 +19,52 @@ it is frustrating when capable hardware is restricted by a regional configuratio
 This repository records the investigation and provides a small, verifiable, and
 reversible KernelSU module.
 
+## Why v0.5.1 was updated
+
+Early testing showed that BeiDou could be visible after a cold reboot on the North
+American OnePlus 15, yet disappear after an eSIM switch, carrier re-registration,
+Wi-Fi/VoWiFi changes, or mobile-service recovery. Comparing the state before and
+after those events narrowed the problem from GNSS HAL capability to the modem
+regenerating its GNSS policy during subscription or regional-configuration refreshes.
+
+Runtime checks identified two Qualcomm modem EFS items as the decisive state:
+
+```text
+/nv/item_files/gps/cgps/me/gnss_config
+/nv/item_files/gps/cgps/me/gnss_config_Subscription01
+```
+
+In some switching scenarios, the modem rewrites the known EU value
+`05 59 00 00` (`0x5905`) as the NA value `05 49 00 00` (`0x4905`). v0.5.1 therefore
+extends the guard triggers to SIM/eSIM, Wi-Fi, VoWiFi, and mobile-signal recovery,
+then checks the live items every second for 180 seconds. It can reverse a write after
+it happens, but it cannot block modem-internal regeneration from the Android AP side.
+
+### Latest MBN/MCFG scan findings
+
+Further scanning and comparison of the NA, related NA/TMO software templates, and the
+EU hardware MCFG located the source-level regional difference:
+
+| Compared template | GNSS configuration |
+|---|---|
+| NA `mcfg_hw` | `gnss_config = 0x4905` (`05 49 00 00`) |
+| EU `mcfg_hw` | `gnss_config = 0x5905` (`05 59 00 00`) |
+
+The corresponding GNSS regional-configuration field to change has been located in the
+NA MBN/MCFG template. It is not yet safe to claim that changing only one field after
+`NA`, such as changing `4` to `5`, is sufficient; field checks, lengths, signatures,
+and the complete MBN packaging relationship still need to be verified.
+
+This project does not publish a modified MBN. The current environment lacks a suitable
+toolchain to correctly encrypt, sign, or package an MBN that the modem/PDC would safely
+accept. v0.5.1 therefore remains a reversible runtime EFS guard and does not modify MBN,
+MCFG partitions, PDC, or modem firmware.
+
+If you have experience with Qualcomm MBN/MCFG parsing and repackaging, PDC configuration,
+signature validation, or NA/NA-TMO versus EU template analysis, help through an Issue or
+Pull Request would be valuable. The priority is a recoverable test sample that preserves
+the original structure and checks while leaving RF configuration untouched.
+
 ## Short conclusion
 
 The antenna is not the problem, and an EU modem image is unnecessary. The decisive
