@@ -68,20 +68,30 @@ when present, treats its absence as `OPTIONAL_MISSING`, and never creates it.
 
 ## 6. Watcher state machine
 
-`module/service.sh` watches `gsm.sim.state`, `gsm.sim.operator.numeric`, and
-`persist.radio.multisim.config`.
+`module/service.sh` watches `gsm.sim.state`, `gsm.sim.operator.numeric`,
+`persist.radio.multisim.config`, Android's `global wifi_on` setting, and the
+telephony/IMS state from `dumpsys telephony.registry`, `dumpsys ims`, and
+IMS/WFC properties.
 
 ```text
-State change
-  ├─ early repair after 5 seconds
-  ├─ wait another 10 seconds
-  ├─ settled repair
+SIM/eSIM or Wi-Fi toggle, VoWiFi WLAN registration/disconnection or call-state change,
+or mobile service recovery
+  ├─ enter a 180-second guard window
+  ├─ check/repair every 1 second
+  ├─ wait for both values to remain stable for 12 seconds
   └─ restart gnss_service on success
 ```
 
-A low-frequency safety check runs about every ten minutes. It repairs and reloads only
-when `--check` identifies a known value mismatch. A singleton lock prevents multiple
+If the Wi-Fi setting cannot be read as `0` or `1`, it does not trigger a guard window.
+Mobile service triggers only on an explicit `no_service -> in_service` transition; ordinary
+network-type changes do not trigger it. Outside the window, state changes are polled every
+2 seconds and there is no active GNSS EFS check. It repairs and reloads only when `--check`
+identifies a known value mismatch inside the guard window. A singleton lock prevents multiple
 watchers from competing for the DIAG port.
+
+The VoWiFi snapshot combines IMS WLAN transport registration and call state, so WLAN
+registration, disconnection, call start, and call end all trigger the guard window. These
+telephony/IMS reads are for event detection only and do not write to the modem.
 
 ## 7. Verified evidence
 

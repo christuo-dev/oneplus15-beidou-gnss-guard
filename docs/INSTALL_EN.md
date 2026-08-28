@@ -12,11 +12,11 @@
 
 ## Install
 
-Select `oneplus15_bds_guard-v0.4.1.zip` from Releases in KernelSU Manager, or use:
+Select `oneplus15_bds_guard-v0.5.1.zip` from Releases in KernelSU Manager, or use:
 
 ```sh
-cp oneplus15_bds_guard-v0.4.1.zip /data/local/tmp/
-su -c '/data/adb/ksu/bin/ksud module install /data/local/tmp/oneplus15_bds_guard-v0.4.1.zip'
+cp oneplus15_bds_guard-v0.5.1.zip /data/local/tmp/
+su -c '/data/adb/ksud module install /data/local/tmp/oneplus15_bds_guard-v0.5.1.zip'
 su -c '/data/adb/ksu/bin/ksud module enable oneplus15_bds_guard'
 ```
 
@@ -31,7 +31,7 @@ su -c '/data/adb/ksu/bin/ksud module list'
 su -c 'ps -A -o PID,PPID,USER,ARGS | grep oneplus15_bds_guard/service.sh'
 ```
 
-Expected: `version=0.4.1`, `versionCode=8`.
+Expected: `version=0.5.1`, `versionCode=10`.
 
 ## Read-only EFS check
 
@@ -60,8 +60,11 @@ then inspect:
 su -c 'tail -150 /data/adb/oneplus15_bds_guard/service.log'
 ```
 
-Expected events include `subscription state changed`, early and settled repairs,
-`restarting gnss_service`, and `gnss_service running`.
+Expected events include `subscription state changed`, `restarting gnss_service`,
+and `gnss_service running`. If a known `0549` mismatch is detected, the log also
+contains `check mismatch` and `repair start reason=subscription_change`; no write
+is performed when the values are already `0559`. After the 180-second window,
+periodic GNSS EFS checks stop and only event-state polling remains.
 
 ## Disable or uninstall
 

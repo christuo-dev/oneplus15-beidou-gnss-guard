@@ -15,14 +15,14 @@
 在 KernelSU 管理器选择 Release 中的：
 
 ```text
-oneplus15_bds_guard-v0.4.1.zip
+oneplus15_bds_guard-v0.5.1.zip
 ```
 
 或使用 root shell：
 
 ```sh
-cp oneplus15_bds_guard-v0.4.1.zip /data/local/tmp/
-su -c '/data/adb/ksu/bin/ksud module install /data/local/tmp/oneplus15_bds_guard-v0.4.1.zip'
+cp oneplus15_bds_guard-v0.5.1.zip /data/local/tmp/
+su -c '/data/adb/ksu/bin/ksud module install /data/local/tmp/oneplus15_bds_guard-v0.5.1.zip'
 su -c '/data/adb/ksu/bin/ksud module enable oneplus15_bds_guard'
 ```
 
@@ -40,8 +40,8 @@ su -c 'ps -A -o PID,PPID,USER,ARGS | grep oneplus15_bds_guard/service.sh'
 预期版本：
 
 ```text
-version=0.4.1
-versionCode=8
+version=0.5.1
+versionCode=10
 ```
 
 ## 检查 GNSS EFS
@@ -82,15 +82,17 @@ su -c 'setprop ctl.restart gnss_service'
 su -c 'tail -150 /data/adb/oneplus15_bds_guard/service.log'
 ```
 
-预期出现：
+预期至少出现：
 
 ```text
 subscription state changed
-repair start reason=subscription_change_early
-repair start reason=subscription_change_settled
 restarting gnss_service
 gnss_service running
 ```
+
+如果检测到已知的 `0549` 偏差，日志还会出现 `check mismatch` 和
+`repair start reason=subscription_change`。配置本来就是 `0559` 时不会执行写入。
+窗口结束后不再进行周期性 GNSS EFS 检查，仅保留状态轮询。
 
 ## 禁用与卸载
 

@@ -26,11 +26,11 @@
 有效恢复流程是：
 
 ```text
-检测 SIM/eSIM 变化
+检测 SIM/eSIM、Wi-Fi、VoWiFi 状态变化或移动信号恢复
         ↓
-检查并修复已存在的 GNSS EFS 项为 0x5905
+进入 180 秒高频守护窗口，每 1 秒检查并修复已存在的 GNSS EFS 项为 0x5905
         ↓
-等待订阅配置稳定，再检查一次
+两个值连续稳定 12 秒
         ↓
 只重启 Android gnss_service
         ↓
@@ -70,7 +70,7 @@
 
 ## 安装
 
-1. 从 [Releases](https://github.com/christuo-dev/oneplus15-beidou-gnss-guard/releases) 下载 `oneplus15_bds_guard-v0.4.1.zip`。
+1. 从 [Releases](https://github.com/christuo-dev/oneplus15-beidou-gnss-guard/releases) 下载 `oneplus15_bds_guard-v0.5.1.zip`。
 2. 在 KernelSU 管理器中安装模块。
 3. 确认模块处于启用状态。
 4. 取得 root 后，必要时做一次 Android 软重启，让模块 service 正式运行。
@@ -105,8 +105,17 @@ NA：05 49 00 00（0x4905）
 - `Subscription01` 只在存在时修复；
 - 某些 eSIM profile 会合法删除第二项，模块不会强行创建它。
 
-SIM/eSIM 状态变化后，模块会进行 early 和 settled 两次检查，最后只重启
-`gnss_service`，让 GNSS HAL 重新读取配置。
+SIM/eSIM、Wi-Fi 开关、VoWiFi 连接/断连或通话状态变化，或移动网络从无服务恢复到有服务
+后，模块会在 180 秒窗口内每 1 秒读取真实 NV 项。发现 modem
+回写 `0549` 时立即带校验恢复为 `0559`；两个值连续稳定 12 秒后，只重启一次
+`gnss_service`，让 GNSS HAL 重新读取配置。窗口结束后不再主动访问 GNSS EFS，仅保留
+每 2 秒一次的状态轮询。
+
+VoWiFi 通过 `dumpsys telephony.registry`、`dumpsys ims` 和 IMS/WFC 属性识别 WLAN 注册
+与通话状态；连接、断连、通话开始和结束都会触发窗口。
+
+模块不能从 AP 侧阻止 modem 内部瞬时写入北美值；它的作用是在写入发生后尽快检测、
+恢复并重新加载 GNSS。这样覆盖 modem 延迟回写或订阅切换晚于 SIM 属性变化的情况。
 
 ## 已验证现象
 

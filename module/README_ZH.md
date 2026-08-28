@@ -17,8 +17,11 @@ modem EFS 项：
 都会被拒绝。它不替换 MCFG、不修改 radio/RF、不刷分区，也不需要解锁 Bootloader，
 但需要已经工作的 KernelSU root。
 
-service 使用单实例 watcher。开机或 SIM/eSIM 运营商状态变化后，它先检查并修复，等待
-订阅配置稳定后再检查一次，然后只重启 Android `gnss_service`。它不重启 modem/radio。
+service 使用单实例 watcher。开机、SIM/eSIM 运营商状态变化、Wi-Fi 开关变化、VoWiFi
+连接/断连或通话状态变化，或移动网络从无服务恢复到已注册后，进入 180 秒高频守护窗口，
+窗口内每 `1` 秒检查一次实际 EFS 项；等待配置稳定后，才只重启 Android `gnss_service`。
+它不重启 modem/radio。Wi-Fi 状态读取失败不会触发窗口。VoWiFi 状态来自 telephony、IMS
+dump 和 IMS/WFC 属性。窗口结束后不再主动访问 GNSS EFS，仅保留每 2 秒一次的状态轮询。
 
 KernelSU 操作按钮可手动修复 EFS。日志位于：
 

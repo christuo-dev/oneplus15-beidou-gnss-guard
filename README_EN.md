@@ -26,11 +26,11 @@ parts are two Qualcomm modem GNSS EFS items and stale configuration cached by th
 HAL.
 
 ```text
-Detect SIM/eSIM state change
+Detect SIM/eSIM, Wi-Fi, VoWiFi state changes, or mobile-signal recovery
         ↓
-Validate and repair existing GNSS EFS items to 0x5905
+Enter a 180-second high-frequency guard window and poll existing GNSS EFS items every 1 second
         ↓
-Wait for subscription configuration to settle and check again
+Wait until both values remain stable for 12 seconds
         ↓
 Restart only Android gnss_service
         ↓
@@ -64,7 +64,7 @@ accesses modem EFS; do not experiment on an unverified model.
 
 ## Installation
 
-1. Download `oneplus15_bds_guard-v0.4.1.zip` from [Releases](https://github.com/christuo-dev/oneplus15-beidou-gnss-guard/releases).
+1. Download `oneplus15_bds_guard-v0.5.1.zip` from [Releases](https://github.com/christuo-dev/oneplus15-beidou-gnss-guard/releases).
 2. Install and enable it with KernelSU Manager.
 3. After root is active, perform one Android soft reboot if needed so the service runs.
 4. Verify BeiDou satellites with GPSTest, GnssLogger, or a comparable tool.
@@ -96,8 +96,19 @@ Safeguards:
 - the primary item must exist;
 - `Subscription01` is repaired only when present and is never force-created.
 
-After a SIM/eSIM change, the watcher performs an early and a settled check. It then
-restarts only `gnss_service`, allowing the GNSS HAL to reload the corrected state.
+After a SIM/eSIM or Wi-Fi toggle, a VoWiFi connection/disconnection or call-state change, or
+when mobile service recovers from no service, the watcher reads the live NV items every
+1 second for 180 seconds.
+If the modem writes `0549` again, it immediately restores `0559` with a verified write.
+Once both values remain stable for 12 seconds, it restarts only `gnss_service`. Normal
+operation then stops active GNSS EFS access and polls only event state every 2 seconds.
+
+VoWiFi state is derived from `dumpsys telephony.registry`, `dumpsys ims`, and IMS/WFC
+properties. WLAN registration and call-state changes both trigger the guard window.
+
+The module cannot block a modem-internal write from the AP side. It detects and reverses
+the write quickly, then reloads GNSS. This covers delayed modem writes and subscription
+updates that occur after the visible SIM properties change.
 
 ## Verified observations
 

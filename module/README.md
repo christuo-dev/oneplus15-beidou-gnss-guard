@@ -18,10 +18,13 @@ It accepts only the known values `05 49 00 00` and `05 59 00 00`, writes the EU
 value, and verifies every write by reading it back. Any unexpected value causes
 an immediate refusal. It does not replace MCFG images or alter radio/RF items.
 
-The service enforces a singleton watcher. After boot or a SIM/eSIM operator
-change, it verifies both items, waits for subscription configuration to settle,
-verifies them again, and restarts only Android's `gnss_service`. It never
-restarts the modem or radio.
+The service enforces a singleton watcher. After boot, a SIM/eSIM operator
+change, a Wi-Fi toggle, a VoWiFi registration/disconnection or call-state change,
+or mobile service recovery from no service, it enters a 180-second guard window
+and checks the live EFS items every `1` second. It restarts only Android's
+`gnss_service` after the configuration settles. Failed Wi-Fi reads do not trigger
+the window. After the window, it polls only event state every 2 seconds and does
+not perform periodic GNSS EFS checks. It never restarts the modem or radio.
 
 The KernelSU action button performs a manual EFS repair. Logs are under
 `/data/adb/oneplus15_bds_guard/`.

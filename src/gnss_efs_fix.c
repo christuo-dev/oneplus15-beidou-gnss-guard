@@ -2,7 +2,6 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,7 +10,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 
 #define DIAG_SUBSYS_CMD 75
@@ -77,7 +75,7 @@ static int write_all(int fd, const void *buf, size_t len) {
 
 static int send_frame(const uint8_t *payload, size_t len) {
     uint8_t raw[MAX_FRAME], frame[MAX_FRAME * 2];
-    if (len + 2 > sizeof(raw)) return -1;
+    if (len > sizeof(raw) - 2 || len > (sizeof(frame) - 1) / 2 - 2) return -1;
     memcpy(raw, payload, len);
     put_u16(raw + len, crc_x25(payload, len));
     len += 2;

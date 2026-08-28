@@ -84,19 +84,29 @@ MPSS-only SSR 也没有恢复北斗，说明不应通过更重的基带重启解
 gsm.sim.state
 gsm.sim.operator.numeric
 persist.radio.multisim.config
+settings get global wifi_on
+dumpsys telephony.registry
+dumpsys ims
+getprop（IMS/WFC/VoWiFi 状态）
 ```
 
 流程：
 
 ```text
-状态变化
-  ├─ 5 秒后 early repair
-  ├─ 再等 10 秒
-  ├─ settled repair
+SIM/eSIM、Wi-Fi 开关、VoWiFi WLAN 注册/断连或通话状态变化，或移动信号从无服务恢复
+  ├─ 进入 180 秒窗口
+  ├─ 窗口内每 1 秒检测/修复
+  ├─ 两项稳定 12 秒
   └─ 成功后 restart gnss_service
 ```
 
-另有约 10 分钟的低频安全检查。只有 `--check` 返回“已知值存在偏差”时才修复并重载。
+Wi-Fi 读取不到 `0/1` 时不会触发窗口。移动信号只在明确经历
+`no_service -> in_service` 时触发；普通网络制式变化不会触发。窗口外保持 2 秒状态轮询，
+不再主动访问 GNSS EFS。只有进入高频窗口后，`--check` 返回“已知值存在偏差”时才修复并重载。
+
+VoWiFi 快照由 IMS 是否使用 WLAN 传输和通话状态组成，因此 WLAN 注册、断连、通话开始
+和结束都会触发高频窗口。相关 `dumpsys` 和 `getprop` 读取也在窗口内执行；它们只用于
+事件识别，不会写入 modem。
 
 单实例锁避免 KernelSU 手动加载或软重启后出现多个 watcher，同时争用 DIAG 端口。
 

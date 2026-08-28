@@ -12,7 +12,7 @@
 打包 KernelSU 模块，并生成 `dist/SHA256SUMS`。校验：
 
 ```sh
-unzip -t dist/oneplus15_bds_guard-v0.4.1.zip
+unzip -t dist/oneplus15_bds_guard-v0.5.1.zip
 shasum -a 256 -c dist/SHA256SUMS
 ```
 

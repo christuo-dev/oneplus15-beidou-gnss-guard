@@ -13,7 +13,7 @@ The script builds a static arm64 client with
 generates `dist/SHA256SUMS`. Verify with:
 
 ```sh
-unzip -t dist/oneplus15_bds_guard-v0.4.1.zip
+unzip -t dist/oneplus15_bds_guard-v0.5.1.zip
 shasum -a 256 -c dist/SHA256SUMS
 ```
 
